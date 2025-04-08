@@ -10,8 +10,6 @@ import 'utils/theme_helper.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  MCPLogger.setAllLevels(LogLevel.debug);
-
   // Initialize app
   runApp(
     MultiProvider(

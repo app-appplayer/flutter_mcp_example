@@ -48,8 +48,7 @@ class McpClientService {
         secure: true,
         lifecycleManaged: true,
         autoStart: false,
-        //loggingLevel: settings.enableLogging ? LogLevel.debug : LogLevel.info,
-        loggingLevel: LogLevel.debug,
+        loggingLevel: settings.enableLogging ? LogLevel.debug : LogLevel.info,
         enablePerformanceMonitoring: settings.enablePerformanceMonitoring,
         highMemoryThresholdMB: settings.highMemoryThresholdMB,
       ));
