@@ -48,7 +48,8 @@ class McpClientService {
         secure: true,
         lifecycleManaged: true,
         autoStart: false,
-        loggingLevel: settings.enableLogging ? LogLevel.debug : LogLevel.info,
+        //loggingLevel: settings.enableLogging ? LogLevel.debug : LogLevel.info,
+        loggingLevel: LogLevel.debug,
         enablePerformanceMonitoring: settings.enablePerformanceMonitoring,
         highMemoryThresholdMB: settings.highMemoryThresholdMB,
       ));
@@ -73,6 +74,7 @@ class McpClientService {
         transportCommand: config.useSSE ? null : config.transportCommand,
         transportArgs: config.useSSE ? null : config.transportArgs,
         serverUrl: config.useSSE ? config.serverUrl : null,
+        authToken: config.authToken, // Added auth token
         capabilities: config.capabilities,
       );
 
@@ -80,6 +82,7 @@ class McpClientService {
       if (config.llmProvider != null && config.modelName != null) {
         // Get API key from secure storage
         final apiKey = await SecureStorageService.getApiKey(config.llmProvider!);
+        print('Connecting with LLM provider: ${config.llmProvider}, API key: ${apiKey != null ? "found (length: ${apiKey.length})" : "null"}');
 
         if (apiKey != null && apiKey.isNotEmpty) {
           // Create LLM client
@@ -99,6 +102,10 @@ class McpClientService {
             llmId: _llmId!,
           );
         }
+      } else {
+        _errorMessage = 'API key not found for provider: ${config.llmProvider}';
+        _status = ConnectionStatus.error;
+        return false;
       }
 
       // 3. Connect the client

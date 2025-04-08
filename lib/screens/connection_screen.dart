@@ -4,6 +4,7 @@ import '../models/connection_config.dart';
 import '../providers/connection_provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/mcp_client_service.dart';
+import '../services/secure_storage_service.dart'; // Added for debug
 import 'connection_form_screen.dart';
 
 class ConnectionScreen extends StatelessWidget {
@@ -17,6 +18,12 @@ class ConnectionScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Connection'),
         actions: [
+          // Debug button to check saved connections
+          IconButton(
+            icon: const Icon(Icons.bug_report),
+            onPressed: () => _debugStoredConnections(context),
+            tooltip: 'Debug Storage',
+          ),
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: () => _createNewConnection(context),
@@ -108,6 +115,10 @@ class ConnectionScreen extends StatelessWidget {
                     Text('Server URL: ${currentConfig.serverUrl}')
                   else if (!currentConfig.useSSE && currentConfig.transportCommand != null)
                     Text('Command: ${currentConfig.transportCommand}'),
+
+                  // Auth token (if present)
+                  if (currentConfig.authToken != null && currentConfig.authToken!.isNotEmpty)
+                    Text('Auth Token: ${_maskAuthToken(currentConfig.authToken!)}'),
 
                   // LLM details
                   if (currentConfig.llmProvider != null && currentConfig.modelName != null)
@@ -519,5 +530,58 @@ class ConnectionScreen extends StatelessWidget {
         content: Text('Deleted "$connectionName"'),
       ),
     );
+  }
+
+  // Debug method to show saved connections in storage
+  void _debugStoredConnections(BuildContext context) async {
+    try {
+      final keys = await SecureStorageService.getAllKeys();
+      final connections = await SecureStorageService.getConnectionNames();
+
+      if (!context.mounted) return;
+
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Storage Debug'),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Saved Connection Names:'),
+                Text(connections.join(', ')),
+                const SizedBox(height: 16),
+                const Text('All Storage Keys:'),
+                Text(keys.join('\n')),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error accessing storage: $e'),
+        ),
+      );
+    }
+  }
+
+  // Helper to mask auth token for display
+  String _maskAuthToken(String token) {
+    if (token.length <= 8) {
+      return '****';
+    }
+
+    return '${token.substring(0, 4)}****${token.substring(token.length - 4)}';
   }
 }

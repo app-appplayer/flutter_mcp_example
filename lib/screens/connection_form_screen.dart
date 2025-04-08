@@ -24,6 +24,7 @@ class _ConnectionFormScreenState extends State<ConnectionFormScreen> {
   final TextEditingController _transportCommandController = TextEditingController();
   final TextEditingController _transportArgsController = TextEditingController();
   final TextEditingController _serverUrlController = TextEditingController();
+  final TextEditingController _authTokenController = TextEditingController(); // Added auth token controller
 
   // Form values
   bool _useSSE = true;
@@ -57,6 +58,7 @@ class _ConnectionFormScreenState extends State<ConnectionFormScreen> {
     _transportCommandController.text = config.transportCommand ?? '';
     _transportArgsController.text = config.transportArgs?.join(' ') ?? '';
     _serverUrlController.text = config.serverUrl ?? '';
+    _authTokenController.text = config.authToken ?? ''; // Load auth token
 
     _useSSE = config.useSSE;
     _selectedLlmProvider = config.llmProvider;
@@ -77,6 +79,7 @@ class _ConnectionFormScreenState extends State<ConnectionFormScreen> {
     _transportCommandController.dispose();
     _transportArgsController.dispose();
     _serverUrlController.dispose();
+    _authTokenController.dispose(); // Dispose auth token controller
     super.dispose();
   }
 
@@ -209,19 +212,33 @@ class _ConnectionFormScreenState extends State<ConnectionFormScreen> {
 
             // SSE connection fields
             if (_useSSE)
-              TextFormField(
-                controller: _serverUrlController,
-                decoration: const InputDecoration(
-                  labelText: 'Server URL',
-                  hintText: 'http://localhost:8080/sse',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (_useSSE && (value == null || value.isEmpty)) {
-                    return 'Please enter a server URL';
-                  }
-                  return null;
-                },
+              Column(
+                children: [
+                  TextFormField(
+                    controller: _serverUrlController,
+                    decoration: const InputDecoration(
+                      labelText: 'Server URL',
+                      hintText: 'http://localhost:8080/sse',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (_useSSE && (value == null || value.isEmpty)) {
+                        return 'Please enter a server URL';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  // Add Auth Token field
+                  TextFormField(
+                    controller: _authTokenController,
+                    decoration: const InputDecoration(
+                      labelText: 'Authentication Token (optional)',
+                      hintText: 'Enter auth token if required',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ],
               )
             // Stdio connection fields
             else
@@ -247,6 +264,16 @@ class _ConnectionFormScreenState extends State<ConnectionFormScreen> {
                     decoration: const InputDecoration(
                       labelText: 'Command Arguments (space-separated)',
                       hintText: '--port 8080',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Add Auth Token field
+                  TextFormField(
+                    controller: _authTokenController,
+                    decoration: const InputDecoration(
+                      labelText: 'Authentication Token (optional)',
+                      hintText: 'Enter auth token if required',
                       border: OutlineInputBorder(),
                     ),
                   ),
@@ -291,11 +318,21 @@ class _ConnectionFormScreenState extends State<ConnectionFormScreen> {
 
                 // Check if API key is set for this provider
                 if (value != null) {
-                  final hasKey = await SecureStorageService.hasKey('api_key_$value');
-                  if (!hasKey) {
-                    if (!mounted) return;
+                  try {
+                    final apiKey = await SecureStorageService.getApiKey(value);
+                    final hasKey = apiKey != null && apiKey.isNotEmpty;
+                    print('Checking API key for $value: ${hasKey ? "found" : "not found"}');
 
-                    _showApiKeyWarning(context, value);
+                    if (!hasKey) {
+                      if (!mounted) return;
+                      _showApiKeyWarning(context, value);
+                    }
+                  } catch (e) {
+                    print('Error checking API key: $e');
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error checking API key: $e')),
+                    );
                   }
                 }
               },
@@ -384,6 +421,12 @@ class _ConnectionFormScreenState extends State<ConnectionFormScreen> {
       transportArgs = _transportArgsController.text.split(' ');
     }
 
+    // Get auth token (if provided)
+    String? authToken;
+    if (_authTokenController.text.isNotEmpty) {
+      authToken = _authTokenController.text.trim();
+    }
+
     // Create connection configuration
     final config = ConnectionConfig(
       name: _nameController.text,
@@ -400,6 +443,7 @@ class _ConnectionFormScreenState extends State<ConnectionFormScreen> {
       ),
       llmProvider: _selectedLlmProvider,
       modelName: _selectedModelName,
+      authToken: authToken, // Include auth token in config
     );
 
     // Validate the configuration

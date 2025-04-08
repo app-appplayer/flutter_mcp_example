@@ -29,6 +29,7 @@ class SecureStorageService {
         key = 'api_key_${provider.toLowerCase()}';
     }
 
+    print('Retrieved API keyName: $key');
     await _storage.write(key: key, value: apiKey);
   }
 
@@ -49,7 +50,9 @@ class SecureStorageService {
         key = 'api_key_${provider.toLowerCase()}';
     }
 
-    return await _storage.read(key: key);
+    final value = await _storage.read(key: key);
+    print('Retrieved API key for $provider from key $key: ${value != null ? "found (length: ${value.length})" : "not found"}');
+    return value;
   }
 
   // Delete API key for provider
@@ -128,8 +131,22 @@ class SecureStorageService {
 
     // Update the list of connection names
     final names = await getConnectionNames();
-    names.remove(name);
-    await saveConnectionNames(names);
+    if (names.contains(name)) {
+      names.remove(name);
+      await saveConnectionNames(names);
+    }
+  }
+
+  // Debug method to get all keys in storage
+  static Future<List<String>> getAllKeys() async {
+    // This is only available on some platforms
+    try {
+      final all = await _storage.readAll();
+      return all.keys.toList();
+    } catch (e) {
+      print('Error getting all keys: $e');
+      return [];
+    }
   }
 
   // Save generic secure value

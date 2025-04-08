@@ -79,15 +79,25 @@ class ConnectionProvider extends ChangeNotifier {
     _setLoading(true);
 
     try {
+      // First, save the connection in secure storage
       await SecureStorageService.saveConnectionConfig(
         config.name,
         config.toJson(),
       );
 
+      // Update current config
       _currentConfig = config;
 
       // Refresh the list of saved connections
       await _loadSavedConnections();
+
+      // Make sure the new connection is in the list
+      if (!_savedConnections.contains(config.name)) {
+        _savedConnections.add(config.name);
+        await SecureStorageService.saveConnectionNames(_savedConnections);
+      }
+
+      notifyListeners();
     } catch (e) {
       _setError('Failed to save connection: $e');
     } finally {
@@ -109,6 +119,12 @@ class ConnectionProvider extends ChangeNotifier {
 
       // Refresh the list of saved connections
       await _loadSavedConnections();
+
+      // Double check that the connection was actually removed from the list
+      if (_savedConnections.contains(name)) {
+        _savedConnections.remove(name);
+        await SecureStorageService.saveConnectionNames(_savedConnections);
+      }
 
       // If no connections left, create a default one
       if (_savedConnections.isEmpty) {

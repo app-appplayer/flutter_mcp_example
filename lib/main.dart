@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_mcp/flutter_mcp.dart';
 import 'package:provider/provider.dart';
 import 'screens/home_screen.dart';
 import 'providers/chat_provider.dart';
@@ -8,6 +9,8 @@ import 'utils/theme_helper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  MCPLogger.setAllLevels(LogLevel.debug);
 
   // Initialize app
   runApp(

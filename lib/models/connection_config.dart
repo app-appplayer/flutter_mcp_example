@@ -12,6 +12,7 @@ class ConnectionConfig {
   final ClientCapabilities? capabilities;
   final String? llmProvider;
   final String? modelName;
+  final String? authToken; // Added auth token field
 
   ConnectionConfig({
     required this.name,
@@ -24,6 +25,7 @@ class ConnectionConfig {
     this.capabilities,
     this.llmProvider,
     this.modelName,
+    this.authToken, // Added to constructor
   });
 
   // Copy with method
@@ -38,6 +40,7 @@ class ConnectionConfig {
     ClientCapabilities? capabilities,
     String? llmProvider,
     String? modelName,
+    String? authToken, // Added to copyWith
   }) {
     return ConnectionConfig(
       name: name ?? this.name,
@@ -50,6 +53,7 @@ class ConnectionConfig {
       capabilities: capabilities ?? this.capabilities,
       llmProvider: llmProvider ?? this.llmProvider,
       modelName: modelName ?? this.modelName,
+      authToken: authToken ?? this.authToken, // Added to copyWith return
     );
   }
 
@@ -70,6 +74,7 @@ class ConnectionConfig {
       },
       'llmProvider': llmProvider,
       'modelName': modelName,
+      'authToken': authToken, // Added to JSON serialization
     };
   }
 
@@ -94,6 +99,7 @@ class ConnectionConfig {
           : null,
       llmProvider: json['llmProvider'] as String?,
       modelName: json['modelName'] as String?,
+      authToken: json['authToken'] as String?, // Added to fromJson
     );
   }
 
@@ -114,6 +120,7 @@ class ConnectionConfig {
       ),
       llmProvider: 'openai',
       modelName: 'gpt-4',
+      authToken: null, // Default auth token is null
     );
   }
 

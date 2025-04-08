@@ -155,6 +155,7 @@ class _ApiKeyFormState extends State<ApiKeyForm> {
       return;
     }
 
+    print('Saving API key for provider: ${widget.provider}, key length: ${apiKey.length}');
     widget.onSave(apiKey);
 
     setState(() {
